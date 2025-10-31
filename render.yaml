@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: sistema-audita
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn saas_project.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.4
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sistema-audita-db
+          property: connectionString
+      - key: DJANGO_SECURE_SSL_REDIRECT
+        value: true
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: BASE_URL
+        sync: false
+
+databases:
+  - name: sistema-audita-db
+    databaseName: sistema_audita_db
+    user: sistema_audita_user
+    plan: free
