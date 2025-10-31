@@ -49,6 +49,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy project files
 COPY . .
 
+# Ensure start script is executable
+RUN chmod +x /app/start.sh
+
 # Collect static files (will be served by whitenoise)
 RUN python manage.py collectstatic --no-input --clear || echo "Collectstatic failed, continuing..."
 
@@ -60,5 +63,5 @@ USER appuser
 # Expose port (Render uses PORT environment variable)
 EXPOSE $PORT
 
-# Start command using gunicorn
-CMD gunicorn saas_project.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+# Start via entry script that runs migrations then Gunicorn
+CMD ["/app/start.sh"]
