@@ -51,6 +51,8 @@ COPY . .
 
 # Ensure start script is executable
 RUN chmod +x /app/start.sh
+# Normalize Windows line endings if present to avoid startup failures
+RUN sed -i 's/\r$//' /app/start.sh
 
 # Collect static files (will be served by whitenoise)
 RUN python manage.py collectstatic --no-input --clear || echo "Collectstatic failed, continuing..."
