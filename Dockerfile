@@ -1,4 +1,4 @@
-FROM python:3.13.4-slim
+FROM python:3.12.6-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
