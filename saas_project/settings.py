@@ -12,13 +12,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-)dje61c_awppvrn8w_jf%way9ugx@dnmq7pmh8x+e#hg44%xp@")
 DEBUG = os.environ.get("DEBUG", "True") == "True"
-allowed_hosts = os.environ.get("ALLOWED_HOSTS", "*")
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",")] if "," in allowed_hosts else [allowed_hosts]
-csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
-if csrf_trusted_origins_env:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins_env.split(",")]
+allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "").strip()
+if not allowed_hosts_env:
+    # Sensible defaults when env is missing/empty (Render often sets empty string)
+    ALLOWED_HOSTS = [
+        "sistema-audita.onrender.com",
+        "localhost",
+        "127.0.0.1",
+    ]
 else:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"] if DEBUG else ["https://sistema.auditapro.com"]
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
+if csrf_trusted_origins_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_trusted_origins_env.split(",") if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = (
+        ["http://localhost", "http://127.0.0.1"]
+        if DEBUG
+        else [
+            "https://sistema-audita.onrender.com",
+            "https://sistema.auditapro.com",
+        ]
+    )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
