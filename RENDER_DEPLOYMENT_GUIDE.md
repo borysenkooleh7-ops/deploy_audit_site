@@ -1,7 +1,7 @@
 # Render.com Deployment Guide for Sistema Audita
 
 ## Overview
-This guide explains how to deploy your Django application to Render.com. All necessary configuration files have been created.
+This guide explains how to deploy your Django application to Render.com using Docker. All necessary configuration files have been created.
 
 ## What Was Fixed
 
@@ -13,9 +13,12 @@ Added to `requirements.txt`:
 - `dj-database-url==2.1.0` - Database URL parser for Render's DATABASE_URL
 
 ### 2. System Dependencies Issue (PyGObject & pycairo)
-**Problem**: PyGObject and pycairo require system libraries not available by default on Render.
+**Problem**: PyGObject and pycairo require system libraries (gobject-introspection, libcairo2-dev, etc.) that are NOT available in Render's native Python runtime.
 
-**Solution**: Created `build.sh` script that installs:
+**Root Cause**: Render.com does NOT allow installing system packages via apt-get in the native Python environment. You cannot use build.sh or apt-get commands.
+
+**Solution**: Deploy using **Docker instead of native Python runtime**. The Dockerfile installs all required system dependencies:
+- gobject-introspection (CRITICAL for PyGObject)
 - libgirepository1.0-dev
 - libcairo2-dev
 - libpango1.0-dev
@@ -26,34 +29,31 @@ Added to `requirements.txt`:
 ### 3. Database Configuration
 Updated `saas_project/settings.py` to support Render's `DATABASE_URL` environment variable while maintaining backward compatibility with individual DB environment variables.
 
-### 4. Deployment Configuration
-Created `render.yaml` with:
-- Web service configuration
+### 4. Docker Configuration
+Updated `Dockerfile` with:
+- Python 3.13.4-slim base image
+- All system dependencies for PyGObject, pycairo, and WeasyPrint
+- Proper build process with pip install
+- Automatic collectstatic during build
+- Gunicorn server with proper configuration
+- Non-root user for security
+
+### 5. Deployment Configuration
+Updated `render.yaml` with:
+- **Docker runtime** (not Python runtime)
 - PostgreSQL database setup
 - Environment variable definitions
-- Build and start commands
+- Dockerfile path configuration
 
 ## Deployment Steps
 
 ### Step 1: Push Changes to GitHub
 
+The changes have already been committed and pushed. If you need to push again:
+
 ```bash
-# Make build.sh executable
-git update-index --chmod=+x build.sh
-
-# Stage all changes
 git add .
-
-# Commit changes
-git commit -m "Configure deployment for Render.com
-
-- Add production dependencies (gunicorn, whitenoise, psycopg2)
-- Create build.sh for system dependencies installation
-- Create render.yaml for Render configuration
-- Update settings.py to support DATABASE_URL
-- Add .env files to .gitignore for security"
-
-# Push to GitHub
+git commit -m "Switch to Docker deployment for Render.com"
 git push origin main
 ```
 
@@ -101,11 +101,12 @@ git push origin main
 1. Click "Deploy" button in Render dashboard
 2. Render will:
    - Clone your repository
-   - Run `build.sh` (installs system dependencies)
+   - Build Docker image from Dockerfile
+   - Install system dependencies (gobject-introspection, libcairo, etc.)
    - Install Python dependencies from `requirements.txt`
    - Run `collectstatic` to gather static files
-   - Run `migrate` to set up database
-   - Start your app with `gunicorn`
+   - Start container with `gunicorn`
+3. **Note**: First Docker build may take 10-15 minutes due to system package installation
 
 ### Step 4: Monitor Build
 
@@ -164,13 +165,12 @@ Subsequent deploys will be faster (2-3 minutes).
 ### Build Fails on PyGObject
 If you see: `ERROR: Dependency 'gobject-introspection-1.0' is required but not found`
 
-**Solution**: Ensure `build.sh` is executable:
-```bash
-chmod +x build.sh
-git add build.sh
-git commit -m "Make build.sh executable"
-git push
-```
+**Solution**: This means Render is using native Python runtime instead of Docker.
+
+1. Check your render.yaml has `runtime: docker` (NOT `runtime: python`)
+2. Verify Dockerfile exists and is in the repository
+3. In Render dashboard, go to Service Settings → change Runtime to "Docker"
+4. Trigger manual deploy
 
 ### Database Connection Error
 Check:
