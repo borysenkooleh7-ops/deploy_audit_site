@@ -5,13 +5,14 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    healthCheckPath: /healthz
     envVars:
       - key: DEBUG
         value: false
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        sync: false
+        value: sistema-audita.onrender.com,localhost,127.0.0.1,0.0.0.0
       - key: CSRF_TRUSTED_ORIGINS
         sync: false
       - key: DATABASE_URL
