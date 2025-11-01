@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
 from notifications import urls as notifications_urls
 from users import urls as users_urls
 from audits import urls as audits_urls
@@ -11,6 +12,7 @@ from user_management import urls as user_management_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls, name="admin"),
+    path("healthz", lambda request: HttpResponse("ok"), name="healthz"),
     path("", include(users_urls)),
     path("notificaciones/", include(notifications_urls)),
     path("auditorias/", include(audits_urls)),
